@@ -5,9 +5,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { vapi } from "@/lib/vapi.sdk";
+import { getVapi } from "@/lib/vapi.sdk";
 import { interviewer } from "@/constants";
 import { createFeedback } from "@/lib/actions/general.action";
+import { toast } from "sonner";
 
 enum CallStatus {
   INACTIVE = "INACTIVE",
@@ -36,6 +37,16 @@ const Agent = ({
   const [lastMessage, setLastMessage] = useState<string>("");
 
   useEffect(() => {
+    let localVapi: ReturnType<typeof getVapi> | null = null;
+
+    try {
+      localVapi = getVapi();
+    } catch (e: any) {
+      // Surface missing token or init issues
+      toast.error(e?.message || "Failed to initialize voice agent.");
+      return;
+    }
+
     const onCallStart = () => {
       setCallStatus(CallStatus.ACTIVE);
     };
@@ -52,33 +63,32 @@ const Agent = ({
     };
 
     const onSpeechStart = () => {
-      console.log("speech start");
       setIsSpeaking(true);
     };
 
     const onSpeechEnd = () => {
-      console.log("speech end");
       setIsSpeaking(false);
     };
 
     const onError = (error: Error) => {
-      console.log("Error:", error);
+      console.error("Vapi Error:", error);
+      toast.error(error?.message || "Voice agent error");
     };
 
-    vapi.on("call-start", onCallStart);
-    vapi.on("call-end", onCallEnd);
-    vapi.on("message", onMessage);
-    vapi.on("speech-start", onSpeechStart);
-    vapi.on("speech-end", onSpeechEnd);
-    vapi.on("error", onError);
+    localVapi.on("call-start", onCallStart);
+    localVapi.on("call-end", onCallEnd);
+    localVapi.on("message", onMessage);
+    localVapi.on("speech-start", onSpeechStart);
+    localVapi.on("speech-end", onSpeechEnd);
+    localVapi.on("error", onError);
 
     return () => {
-      vapi.off("call-start", onCallStart);
-      vapi.off("call-end", onCallEnd);
-      vapi.off("message", onMessage);
-      vapi.off("speech-start", onSpeechStart);
-      vapi.off("speech-end", onSpeechEnd);
-      vapi.off("error", onError);
+      localVapi?.off("call-start", onCallStart);
+      localVapi?.off("call-end", onCallEnd);
+      localVapi?.off("message", onMessage);
+      localVapi?.off("speech-start", onSpeechStart);
+      localVapi?.off("speech-end", onSpeechEnd);
+      localVapi?.off("error", onError);
     };
   }, []);
 
@@ -117,32 +127,72 @@ const Agent = ({
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
 
-    if (type === "generate") {
-      await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-        variableValues: {
-          username: userName,
-          userid: userId,
-        },
-      });
-    } else {
-      let formattedQuestions = "";
-      if (questions) {
-        formattedQuestions = questions
-          .map((question) => `- ${question}`)
-          .join("\n");
-      }
+    // Preflight mic permission to fail early with a clear error
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Close preflight stream immediately; Vapi will open its own stream
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (e: any) {
+      toast.error(
+        e?.message?.includes("denied")
+          ? "Microphone permission denied in browser or OS."
+          : `Microphone error: ${e?.message || "Unknown"}`
+      );
+      setCallStatus(CallStatus.INACTIVE);
+      return;
+    }
 
-      await vapi.start(interviewer, {
-        variableValues: {
-          questions: formattedQuestions,
-        },
-      });
+    let localVapi: ReturnType<typeof getVapi>;
+    try {
+      localVapi = getVapi();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to initialize voice agent.");
+      setCallStatus(CallStatus.INACTIVE);
+      return;
+    }
+
+    try {
+      if (type === "generate") {
+        const workflowId = process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
+        if (!workflowId) {
+          toast.error("Missing NEXT_PUBLIC_VAPI_WORKFLOW_ID in .env.local");
+          setCallStatus(CallStatus.INACTIVE);
+          return;
+        }
+
+        await localVapi.start(workflowId, {
+          variableValues: {
+            username: userName,
+            userid: userId,
+          },
+        });
+      } else {
+        let formattedQuestions = "";
+        if (questions) {
+          formattedQuestions = questions.map((q) => `- ${q}`).join("\n");
+        }
+
+        await localVapi.start(interviewer, {
+          variableValues: {
+            questions: formattedQuestions,
+          },
+        });
+      }
+    } catch (e: any) {
+      console.error("Failed to start call:", e);
+      toast.error(e?.message || "Failed to start the voice call");
+      setCallStatus(CallStatus.INACTIVE);
     }
   };
 
   const handleDisconnect = () => {
     setCallStatus(CallStatus.FINISHED);
-    vapi.stop();
+    try {
+      const localVapi = getVapi();
+      localVapi.stop();
+    } catch {
+      // ignore
+    }
   };
 
   return (
