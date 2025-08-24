@@ -11,7 +11,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   const user = await getCurrentUser();
 
   return (
-    <div className="pattern min-h-screen">
+    <div className="dashboard-bg min-h-screen">
       {/* Fixed Sidebar on desktop */}
       <div className="hidden md:block fixed left-0 top-0 h-screen w-[260px] z-30">
         <Sidebar user={user as any} />

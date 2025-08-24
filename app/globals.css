@@ -217,7 +217,12 @@
     }
 
     .card-interviewer {
-      @apply flex-center flex-col gap-2 p-7 h-[400px] blue-gradient-dark rounded-lg border-2 border-primary-200/50 flex-1 sm:basis-1/2 w-full;
+      @apply flex-center flex-col gap-2 p-7 h-[400px] rounded-2xl border border-white/10 backdrop-blur-2xl shadow-xl flex-1 sm:basis-1/2 w-full;
+      background:
+        linear-gradient(0deg, rgba(0, 31, 92, 0.153), rgba(6, 52, 150, 0.45)),
+        radial-gradient(800px 400px at 110% -10%, rgba(59,130,246,0.18), transparent 70%),
+        radial-gradient(600px 300px at -10% 120%, rgba(255,255,255,0.05), transparent 70%),
+        linear-gradient(135deg, #0A0F1F 0%, #0B1022 50%, #070A14 100%);
     }
 
     .avatar {
@@ -233,22 +238,28 @@
     }
 
     .card-content {
-      @apply flex flex-col gap-2 justify-center items-center p-7 dark-gradient rounded-2xl min-h-full;
+      @apply flex flex-col gap-2 justify-center items-center p-7 rounded-2xl border border-white/10 backdrop-blur-2xl shadow-xl min-h-full;
+      background:
+        radial-gradient(800px 400px at 110% -10%, rgba(59,130,246,0.18), transparent 70%),
+        radial-gradient(600px 300px at -10% 120%, rgba(255,255,255,0.05), transparent 70%),
+        linear-gradient(135deg, #0A0F1F 0%, #0B1022 50%, #070A14 100%);
     }
   }
-
   .transcript-border {
     @apply border-gradient p-0.5 rounded-2xl w-full;
 
     .transcript {
-      @apply dark-gradient rounded-2xl  min-h-12 px-5 py-3 flex items-center justify-center;
-
+      @apply rounded-2xl border border-white/10 backdrop-blur-2xl shadow-xl min-h-12 px-5 py-3 flex items-center justify-center;
+      background:
+        radial-gradient(800px 400px at 110% -10%, rgba(59,130,246,0.18), transparent 70%),
+        radial-gradient(600px 300px at -10% 120%, rgba(255,255,255,0.05), transparent 70%),
+        linear-gradient(135deg, #0A0F1F 0%, #0B1022 50%, #070A14 100%);
+      
       p {
         @apply text-lg text-center text-white;
       }
     }
   }
-
   .section-feedback {
     @apply flex flex-col gap-8 max-w-5xl mx-auto max-sm:px-4 text-lg leading-7;
 
@@ -286,19 +297,32 @@
   }
 
   .card-interview {
-    @apply dark-gradient rounded-2xl min-h-full flex flex-col p-6 relative overflow-hidden gap-10 justify-between;
+    @apply border border-white/10 backdrop-blur-2xl rounded-2xl min-h-full flex flex-col p-6 relative overflow-hidden gap-10 justify-between transition-all duration-300 shadow-xl;
+    background:
+      linear-gradient(0deg, rgba(0, 31, 92, 0.153), rgba(6, 52, 150, 0.45)),
+      radial-gradient(800px 400px at 110% -10%, rgba(59,130,246,0.18), transparent 70%),
+      radial-gradient(600px 300px at -10% 120%, rgba(255,255,255,0.05), transparent 70%),
+      linear-gradient(135deg, #0A0F1F 0%, #0B1022 50%, #070A14 100%);
 
     .badge-text {
       @apply text-sm font-semibold capitalize;
     }
   }
 
+  .card-interview:hover {
+    @apply -translate-y-0.5 ring-1 ring-primary-200/40;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+
   /* Glassmorphism utilities */
   .glass-panel {
-    @apply rounded-2xl border border-border bg-white/10 dark:bg-white/[0.04] backdrop-blur-xl shadow-lg;
+    @apply rounded-2xl border border-border bg-white/[0.06] dark:bg-white/[0.03] backdrop-blur-xl shadow-lg;
   }
   .glass-card {
-    @apply rounded-xl border border-border bg-white/10 dark:bg-white/[0.04] backdrop-blur-md;
+    @apply rounded-xl border border-border bg-white/[0.06] dark:bg-white/[0.03] backdrop-blur-xl;
+  }
+  .glass-surface {
+    @apply rounded-2xl bg-white/[0.06] dark:bg-white/[0.03] backdrop-blur-xl shadow-lg;
   }
   .nav-link {
     @apply flex items-center gap-2 px-3 py-2 rounded-lg text-light-100 hover:bg-white/10 transition-colors;
@@ -342,6 +366,35 @@
 
 @utility pattern {
   @apply bg-[url('/pattern.png')] bg-top bg-no-repeat;
+}
+
+/* Dashboard background: dark blue with subtle radial glows */
+@layer components {
+  .dashboard-bg {
+    @apply relative overflow-hidden;
+    background:
+      radial-gradient(1200px 600px at -10% -10%, rgba(59,130,246,0.18), transparent 60%),
+      radial-gradient(1000px 500px at 110% 0%, rgba(255,255,255,0.06), transparent 60%),
+      linear-gradient(135deg, #0A0F1F 0%, #0B1022 50%, #070A14 100%);
+  }
+
+  /* Hero banner like the reference: rounded, blue gradient, soft glow */
+  .hero-banner {
+    @apply flex flex-row items-center justify-between w-full rounded-3xl px-10 py-8 max-sm:px-4 shadow-xl;
+    background:
+      radial-gradient(900px 450px at 95% 10%, rgba(59,130,246,0.25), transparent 70%),
+      radial-gradient(600px 350px at 0% 100%, rgba(255,255,255,0.06), transparent 60%),
+      linear-gradient(135deg, #0A0F1F 0%, #0B1022 50%, #070A14 100%);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.06);
+    color: #fff;
+  }
+  .hero-banner h2 { @apply text-white; }
+  .hero-banner p { @apply text-white/80; }
+
+  /* Small hover glow helper */
+  .hover-glow {
+    @apply transition-all duration-300 hover:-translate-y-0.5 hover:ring-1 hover:ring-primary-200/40 hover:shadow-xl;
+  }
 }
 
 @utility blue-gradient-dark {

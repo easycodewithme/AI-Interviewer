@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import InterviewCard from "@/components/InterviewCard";
@@ -23,26 +22,16 @@ async function Home() {
 
   return (
     <>
-      <section className="card-cta">
-        <div className="flex flex-col gap-6 max-w-lg">
+      <section className="hero-banner">
+        <div className="flex flex-col gap-4 max-w-2xl">
           <h2>Get Interview-Ready with AI-Powered Practice & Feedback</h2>
-          <p className="text-lg">
-            Practice real interview questions & get instant feedback
-          </p>
-
-          <Button asChild className="btn-primary max-sm:w-full">
-            <Link href="/interview">Start an Interview</Link>
-          </Button>
+          <p className="text-lg">Practice real interview questions & get instant feedback</p>
+          <div className="flex items-center gap-3">
+            <Button asChild className="btn-primary max-sm:w-full">
+              <Link href="/interview">Start an Interview</Link>
+            </Button>
+          </div>
         </div>
-
-        <Image
-          src="/user-avatar.png"
-          alt="hero-illustration"
-          width={420}
-          height={420}
-          className="max-sm:hidden rounded-2xl shadow-2xl"
-          priority
-        />
       </section>
 
       <section className="flex flex-col gap-6 mt-8">

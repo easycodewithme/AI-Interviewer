@@ -21,6 +21,8 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
   const [currentIndex, setCurrentIndex] = useState(0);
   const [messages, setMessages] = useState<SavedMessage[]>([]);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [displayAssistantText, setDisplayAssistantText] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
@@ -40,7 +42,8 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
 
   const speak = async (text: string) => {
     try {
-      setIsSpeaking(true);
+      // Indicate we are preparing TTS audio
+      setIsProcessing(true);
       const res = await fetch("/api/text-to-speech", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,9 +61,19 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
         const audio = new Audio(url);
         // Slightly slower playback for a calmer, more natural feel (configurable)
         const envRate = Number(process.env.NEXT_PUBLIC_TTS_PLAYBACK_RATE);
-        const desired = isNaN(envRate) ? 1.0 : envRate;
-        // clamp to sane range
-        audio.playbackRate = Math.max(0.7, Math.min(1.0, desired));
+        const desired = isNaN(envRate) ? 1.05 : envRate; // slight speed up by default for snappier feel
+        // clamp to sane range (allow modest speed-up)
+        audio.playbackRate = Math.max(0.7, Math.min(1.25, desired));
+        // As soon as audio can play, show the assistant text and mark speaking
+        audio.oncanplaythrough = () => {
+          setDisplayAssistantText(text);
+          setIsProcessing(false);
+          setIsSpeaking(true);
+        };
+        // Append the assistant message when playback actually starts
+        audio.onplay = () => {
+          setMessages((prev) => [...prev, { role: "assistant", content: text }]);
+        };
         audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
         audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Audio play failed")); };
         audio.play();
@@ -69,6 +82,8 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
       toast.error(e?.message || "Failed to play audio");
     } finally {
       setIsSpeaking(false);
+      // Hide assistant text after speech completes or on error
+      setDisplayAssistantText(null);
     }
   };
 
@@ -86,6 +101,9 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
       mr.start();
       mediaRecorderRef.current = mr;
       setRecording(true);
+      // Hide assistant text while user is speaking
+      setDisplayAssistantText(null);
+      setIsProcessing(false);
     } catch (e: any) {
       toast.error(e?.message || "Failed to start recording");
     }
@@ -104,6 +122,7 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
     const stream: MediaStream | undefined = (mr as any).stream;
     stream?.getTracks().forEach((t) => t.stop());
 
+    setIsProcessing(true);
     const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
     const res = await fetch("/api/speech-to-text", {
       method: "POST",
@@ -113,6 +132,7 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
     const data = await res.json();
     if (!res.ok || !data.success) {
       toast.error(data.error || "Transcription failed");
+      setIsProcessing(false);
       return;
     }
 
@@ -163,8 +183,18 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
   };
 
   const askCurrentQuestion = async () => {
+    // Enforce total question budget (assistant messages count)
+    const askedSoFar = messages.filter((m) => m.role === "assistant").length;
+    const remainingBudget = questions.length - askedSoFar;
+    if (remainingBudget <= 0) {
+      await finalizeInterview(messages);
+      return;
+    }
     const q = questions[currentIndex];
-    setMessages((prev) => [...prev, { role: "assistant", content: q }]);
+    if (!q) {
+      await finalizeInterview(messages);
+      return;
+    }
     await speak(q);
     // Automatically start recording after the question has been asked
     if (!recording) await startRecording();
@@ -185,13 +215,22 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
   const decideNextStep = async (latestTranscript: string, allMsgs: SavedMessage[]) => {
     try {
       const baseNext = questions[currentIndex + 1] || null;
+      // Compute remaining total question budget (including follow-ups)
+      const askedSoFar = allMsgs.filter((m) => m.role === "assistant").length;
+      const remainingBudget = Math.max(0, questions.length - askedSoFar);
+      if (remainingBudget <= 0) {
+        await finalizeInterview(allMsgs);
+        return;
+      }
+      setIsProcessing(true);
       const res = await fetch("/api/next-question", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: allMsgs,
           baseQuestion: baseNext,
-          remainingCount: Math.max(0, questions.length - (currentIndex + 1)),
+          // Treat remainingCount as overall remaining budget on the server
+          remainingCount: remainingBudget,
         }),
       });
       const data = await res.json();
@@ -200,15 +239,24 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
       // type: 'followup' | 'base' | 'end'
       if (data.type === "followup" && data.question) {
         // Ask a short contextual follow-up without advancing index
-        setMessages((prev) => [...prev, { role: "assistant", content: data.question }]);
+        // Ensure we still have budget before speaking
+        const askedNow = (messages.concat({ role: "user", content: latestTranscript }) as SavedMessage[])
+          .filter((m) => m.role === "assistant").length;
+        const remNow = Math.max(0, questions.length - askedNow);
+        if (remNow <= 0) {
+          await finalizeInterview(allMsgs);
+          return;
+        }
         await speak(data.question);
         if (!recording) await startRecording();
         return;
       }
 
       if (data.type === "base") {
+        // Move to the next base question only if within bounds and we still have budget
         if (currentIndex + 1 < questions.length) {
           setCurrentIndex((i) => i + 1);
+          // stay in processing until the next question TTS begins
           return;
         }
         // No base left, fall through to end
@@ -218,7 +266,9 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
       await finalizeInterview(allMsgs);
     } catch (e: any) {
       // Fallback to original sequential behavior on failure
-      if (currentIndex + 1 < questions.length) {
+      const askedSoFar = allMsgs.filter((m) => m.role === "assistant").length;
+      const remainingBudget = Math.max(0, questions.length - askedSoFar);
+      if (currentIndex + 1 < questions.length && remainingBudget > 0) {
         setCurrentIndex((i) => i + 1);
       } else {
         await finalizeInterview(allMsgs);
@@ -228,6 +278,7 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
 
   const finalizeInterview = async (allMessages: SavedMessage[]) => {
     try {
+      setIsProcessing(true);
       const res = await fetch("/api/create-feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -259,21 +310,49 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
             {isSpeaking && <span className="animate-speak" />}
           </div>
           <h3>AI Interviewer</h3>
+          {/* AI status chip on the card */}
+          <div>
+            {isSpeaking ? (
+              <span className="px-3 py-1 text-xs rounded-full border border-white/15 bg-white/10 text-white/90 ring-1 ring-primary-200/40 shadow-sm">
+                Speaking
+              </span>
+            ) : isProcessing ? (
+              <span className="px-3 py-1 text-xs rounded-full border border-white/15 bg-white/10 text-white/80 shadow-sm">
+                Processing
+              </span>
+            ) : (
+              <span className="px-3 py-1 text-xs rounded-full border border-white/10 bg-white/5 text-white/60 shadow-sm">
+                Idle
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="card-border">
           <div className="card-content">
             <Image src="/user-avatar.png" alt="me" width={539} height={539} className="rounded-full object-cover size-[120px]" />
             <h3>{userName}</h3>
+            {/* User status chip on the card */}
+            {recording && (
+              <span className="px-3 py-1 text-xs rounded-full border border-white/15 bg-white/10 text-white/90 ring-1 ring-primary-200/40 shadow-sm">
+                Listening
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Transcript */}
-      {messages.length > 0 && (
+      {/* Transcript / Status area */}
+      {(isSpeaking || displayAssistantText || recording || isProcessing) && (
         <div className="transcript-border">
           <div className="transcript">
-            <p className={cn("transition-opacity duration-500 opacity-0", "animate-fadeIn opacity-100")}>{messages[messages.length - 1].content}</p>
+            {isSpeaking || displayAssistantText ? (
+              <p className={cn("transition-opacity duration-500 opacity-0", "animate-fadeIn opacity-100")}>{displayAssistantText}</p>
+            ) : recording ? (
+              <p className="animate-fadeIn">Listening...</p>
+            ) : isProcessing ? (
+              <p className="animate-fadeIn">Processing...</p>
+            ) : null}
           </div>
         </div>
       )}

@@ -49,8 +49,8 @@ export default function InterviewForm({ userId }: { userId: string }) {
   };
 
   return (
-    <div className="card-border lg:min-w-[566px] w-full">
-      <div className="flex flex-col gap-6 card py-10 px-8 w-full">
+    <div className="glass-panel lg:min-w-[566px] w-full">
+      <div className="flex flex-col gap-6 py-10 px-8 w-full">
         <h3>Create your interview</h3>
         <p>Provide details and we will generate tailored questions with Gemini.</p>
 

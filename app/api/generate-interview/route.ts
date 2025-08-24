@@ -12,27 +12,54 @@ export async function POST(request: Request) {
       return Response.json({ success: false, error: "Missing required fields" }, { status: 400 });
     }
 
-    const { text: questions } = await generateText({
+    const amountInt = Math.max(1, Math.min(50, Number(amount) || 0));
+
+    const { text: raw } = await generateText({
       model: google("gemini-2.0-flash-001"),
-      prompt: `Prepare questions for a job interview.
-        The job role is ${role}.
-        The job experience level is ${level}.
-        The tech stack used in the job is: ${techstack}.
-        The focus between behavioural and technical questions should lean towards: ${type}.
-        The amount of questions required is: ${amount}.
-        Please return only the questions, without any additional text.
-        The questions are going to be read by a voice assistant so do not use "/" or "*" or any other special characters which might break the voice assistant.
-        Return the questions formatted like this:
-        ["Question 1", "Question 2", "Question 3"]
+      temperature: 0.95,
+      topP: 0.95,
+      prompt: `Prepare ${amountInt} interview questions.
+        Context:
+        - Role: ${role}
+        - Level: ${level}
+        - Tech stack: ${techstack}
+        - Focus: ${type} (balance behavioral/technical accordingly)
+        Requirements:
+        - Produce exactly ${amountInt} distinct questions.
+        - Ensure variety across topics and difficulty; avoid repeating similar phrasing across sessions.
+        - No preambles or numbering, no extra commentary.
+        - Avoid characters that might break TTS like "/" or "*".
+        Output strictly as a JSON array of strings, e.g. ["Question 1", "Question 2", ...].
         `,
     });
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // Try to salvage JSON array from the response
+      const match = raw.match(/\[[\s\S]*\]/);
+      parsed = match ? JSON.parse(match[0]) : [];
+    }
+
+    const arr = Array.isArray(parsed) ? parsed : [];
+    const cleaned = Array.from(new Set(
+      arr
+        .filter((q) => typeof q === "string")
+        .map((q: string) => q.trim())
+        .filter((q: string) => q.length > 0 && q.length <= 240)
+    ));
+    const finalQuestions = cleaned.slice(0, amountInt);
+    if (finalQuestions.length === 0) {
+      return Response.json({ success: false, error: "Failed to generate questions" }, { status: 502 });
+    }
 
     const interview = {
       role: role as string,
       type: type as string,
       level: level as string,
       techstack: String(techstack).split(",").map((t) => t.trim()).filter(Boolean),
-      questions: JSON.parse(questions),
+      questions: finalQuestions,
       userId: userid as string,
       finalized: true,
       coverImage: getRandomInterviewCover(),
