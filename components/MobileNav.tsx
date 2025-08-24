@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, Home, ListChecks, Settings, LogOut } from "lucide-react";
+import { Menu, Home, ListChecks, Settings, LogOut, History } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
@@ -25,8 +25,8 @@ export default function MobileNav({ user }: MobileNavProps) {
           <SheetTitle className="sr-only">Mobile navigation</SheetTitle>
           <aside className="glass-panel p-4 h-full flex flex-col gap-4 w-full">
             <Link href="/" className="flex items-center gap-2 px-2">
-              <Image src="/logo.svg" alt="PrepWise" width={32} height={28} />
-              <h2 className="text-primary-100">PrepWise</h2>
+              <Image src="/logo.svg" alt="Hireiq.ai" width={32} height={28} />
+              <h2 className="text-primary-100">Hireiq.ai</h2>
             </Link>
 
             <nav className="mt-2 flex-1">
@@ -41,6 +41,12 @@ export default function MobileNav({ user }: MobileNavProps) {
                   <Link href="/interview" className="nav-link" data-active={pathname?.startsWith("/interview")}>
                     <ListChecks className="size-4" />
                     <span>Interviews</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/taken" className="nav-link" data-active={pathname?.startsWith("/taken")}>
+                    <History className="size-4" />
+                    <span>Taken Interviews</span>
                   </Link>
                 </li>
                 <li>
@@ -82,8 +88,8 @@ export default function MobileNav({ user }: MobileNavProps) {
       </Sheet>
 
       <Link href="/" className="flex items-center gap-2">
-        <Image src="/logo.svg" alt="PrepWise" width={32} height={28} />
-        <span className="text-primary-100 font-semibold">PrepWise</span>
+        <Image src="/logo.svg" alt="Hireiq.ai" width={32} height={28} />
+        <span className="text-primary-100 font-semibold">Hireiq.ai</span>
       </Link>
 
       <div className="size-9" />

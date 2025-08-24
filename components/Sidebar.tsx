@@ -3,12 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Home, ListChecks, Settings, LogOut, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Home, ListChecks, Settings, LogOut, ChevronsLeft, ChevronsRight, History } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/interview", label: "Interviews", icon: ListChecks },
+  { href: "/taken", label: "Taken Interviews", icon: History },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -24,8 +25,8 @@ export default function Sidebar({ user }: SidebarProps) {
     <aside className={`glass-panel h-screen p-4 flex flex-col gap-4 transition-[width] duration-300 ${collapsed ? "w-20" : "w-64"}`}>
       <div className="flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 px-2">
-          <Image src="/logo.svg" alt="PrepWise" width={32} height={28} />
-          {!collapsed && <h2 className="text-primary-100">PrepWise</h2>}
+          <Image src="/logo.svg" alt="Hireiq.ai" width={32} height={28} />
+          {!collapsed && <h2 className="text-primary-100">Hireiq.ai</h2>}
         </Link>
         <button
           type="button"

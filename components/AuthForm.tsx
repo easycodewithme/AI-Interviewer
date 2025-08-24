@@ -131,7 +131,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
       <div className="flex flex-col gap-6 py-10 px-8 sm:py-12 sm:px-10">
         <div className="flex items-center gap-2 justify-center">
           <Image src="/logo.svg" alt="logo" height={32} width={38} />
-          <h2 className="text-primary-100">PrepWise</h2>
+          <h2 className="text-primary-100">Hireiq.ai</h2>
         </div>
 
         <div className="flex justify-center">
@@ -178,9 +178,11 @@ const AuthForm = ({ type }: { type: FormType }) => {
               type="password"
             />
 
-            <Button className="btn w-full" type="submit">
-              {isSignIn ? "Sign In" : "Create an Account"}
-            </Button>
+            <div className="flex justify-center">
+              <Button type="submit">
+                {isSignIn ? "Sign In" : "Create an Account"}
+              </Button>
+            </div>
           </form>
         </Form>
 
@@ -190,10 +192,16 @@ const AuthForm = ({ type }: { type: FormType }) => {
           <div className="h-px bg-dark-200 flex-1" />
         </div>
 
-        <Button type="button" className="btn w-full" onClick={onGoogleSignIn}>
-          <Image src="/google.svg" alt="google" width={18} height={18} className="mr-2" />
-          Continue with Google
-        </Button>
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={onGoogleSignIn}
+            className="h-10 px-4 rounded-md bg-white text-black border border-border flex items-center"
+          >
+            <Image src="/google.svg" alt="google" width={18} height={18} className="mr-2" />
+            Continue with Google
+          </button>
+        </div>
 
         <p className="text-center">
           {isSignIn ? "No account yet?" : "Have an account already?"}

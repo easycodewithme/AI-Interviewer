@@ -24,6 +24,8 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
+  // Prevent duplicate speaks in React Strict Mode and track asked base questions
+  const askedSetRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     // Pre-ask permission to avoid UX hiccups
@@ -33,6 +35,8 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
       toast.error("Microphone permission is required.");
     });
   }, []);
+
+  // Ask the first question and subsequent ones automatically via index change
 
   const speak = async (text: string) => {
     try {
@@ -109,21 +113,75 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
     }
 
     const transcript: string = data.transcript || "";
-    setMessages((prev) => [...prev, { role: "user", content: transcript }]);
+    const allMessages: SavedMessage[] = [...messages, { role: "user", content: transcript }];
+    setMessages(allMessages);
 
-    // Move to next question
-    if (currentIndex + 1 < questions.length) {
-      setCurrentIndex((i) => i + 1);
-    } else {
-      // Finish interview => generate feedback
-      await finalizeInterview([...messages, { role: "user", content: transcript }]);
-    }
+    // Decide next step based on the user's answer (conversational flow)
+    await decideNextStep(transcript, allMessages);
   };
 
   const askCurrentQuestion = async () => {
     const q = questions[currentIndex];
     setMessages((prev) => [...prev, { role: "assistant", content: q }]);
     await speak(q);
+    // Automatically start recording after the question has been asked
+    if (!recording) await startRecording();
+  };
+
+  // Whenever the current question index advances, ask the next question automatically
+  useEffect(() => {
+    if (!isSpeaking && !recording && questions[currentIndex]) {
+      // Guard against duplicate effect runs (e.g., Strict Mode)
+      if (askedSetRef.current.has(currentIndex)) return;
+      askedSetRef.current.add(currentIndex);
+      askCurrentQuestion();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex]);
+
+  // Decide next question or follow-up based on transcript and conversation state
+  const decideNextStep = async (latestTranscript: string, allMsgs: SavedMessage[]) => {
+    try {
+      const baseNext = questions[currentIndex + 1] || null;
+      const res = await fetch("/api/next-question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: allMsgs,
+          baseQuestion: baseNext,
+          remainingCount: Math.max(0, questions.length - (currentIndex + 1)),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.success) throw new Error(data?.error || "next-question failed");
+
+      // type: 'followup' | 'base' | 'end'
+      if (data.type === "followup" && data.question) {
+        // Ask a short contextual follow-up without advancing index
+        setMessages((prev) => [...prev, { role: "assistant", content: data.question }]);
+        await speak(data.question);
+        if (!recording) await startRecording();
+        return;
+      }
+
+      if (data.type === "base") {
+        if (currentIndex + 1 < questions.length) {
+          setCurrentIndex((i) => i + 1);
+          return;
+        }
+        // No base left, fall through to end
+      }
+
+      // End of conversation or fallback
+      await finalizeInterview(allMsgs);
+    } catch (e: any) {
+      // Fallback to original sequential behavior on failure
+      if (currentIndex + 1 < questions.length) {
+        setCurrentIndex((i) => i + 1);
+      } else {
+        await finalizeInterview(allMsgs);
+      }
+    }
   };
 
   const finalizeInterview = async (allMessages: SavedMessage[]) => {
@@ -181,12 +239,8 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
       {/* Controls */}
       <div className="w-full flex flex-col items-center gap-3">
         <div className="flex gap-3">
-          <button className="btn-call" onClick={askCurrentQuestion} disabled={isSpeaking || recording}>
-            Ask Question {currentIndex + 1}/{questions.length}
-          </button>
-
           {!recording ? (
-            <button className="btn-primary" onClick={startRecording}>
+            <button className="btn-primary" onClick={startRecording} disabled={isSpeaking}>
               Start Answer
             </button>
           ) : (
