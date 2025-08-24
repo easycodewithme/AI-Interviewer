@@ -1,13 +1,10 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
-import Agent from "@/components/Agent";
+import InterviewRunner from "@/components/InterviewRunner";
 import { getRandomInterviewCover } from "@/lib/utils";
 
-import {
-  getFeedbackByInterviewId,
-  getInterviewById,
-} from "@/lib/actions/general.action";
+import { getInterviewById } from "@/lib/actions/general.action";
 import { getCurrentUser } from "@/lib/actions/auth.action";
 import DisplayTechIcons from "@/components/DisplayTechIcons";
 
@@ -19,10 +16,7 @@ const InterviewDetails = async ({ params }: RouteParams) => {
   const interview = await getInterviewById(id);
   if (!interview) redirect("/");
 
-  const feedback = await getFeedbackByInterviewId({
-    interviewId: id,
-    userId: user?.id!,
-  });
+  // Feedback is created at the end of the interview by InterviewRunner
 
   return (
     <>
@@ -47,13 +41,11 @@ const InterviewDetails = async ({ params }: RouteParams) => {
         </p>
       </div>
 
-      <Agent
+      <InterviewRunner
         userName={user?.name!}
         userId={user?.id}
         interviewId={id}
-        type="interview"
         questions={interview.questions}
-        feedbackId={feedback?.id}
       />
     </>
   );

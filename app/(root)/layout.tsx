@@ -1,24 +1,34 @@
-import Link from "next/link";
-import Image from "next/image";
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
-
-import { isAuthenticated } from "@/lib/actions/auth.action";
+import Sidebar from "@/components/Sidebar";
+import MobileNav from "@/components/MobileNav";
+import { isAuthenticated, getCurrentUser } from "@/lib/actions/auth.action";
 
 const Layout = async ({ children }: { children: ReactNode }) => {
   const isUserAuthenticated = await isAuthenticated();
   if (!isUserAuthenticated) redirect("/sign-in");
 
-  return (
-    <div className="root-layout">
-      <nav>
-        <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.svg" alt="MockMate Logo" width={38} height={32} />
-          <h2 className="text-primary-100">PrepWise</h2>
-        </Link>
-      </nav>
+  const user = await getCurrentUser();
 
-      {children}
+  return (
+    <div className="pattern min-h-screen">
+      {/* Fixed Sidebar on desktop */}
+      <div className="hidden md:block fixed left-0 top-0 h-screen w-[260px] z-30">
+        <Sidebar user={user as any} />
+      </div>
+
+      {/* Content area with left padding on md+ */}
+      <div className="md:pl-[260px]">
+        <div className="mx-auto max-w-7xl px-4 md:px-6 py-6">
+          <main className="flex flex-col gap-6">
+            {/* Mobile header */}
+            <div className="md:hidden">
+              <MobileNav user={user as any} />
+            </div>
+            {children}
+          </main>
+        </div>
+      </div>
     </div>
   );
 };

@@ -7,7 +7,11 @@ const AuthLayout = async ({ children }: { children: ReactNode }) => {
   const isUserAuthenticated = await isAuthenticated();
   if (isUserAuthenticated) redirect("/");
 
-  return <div className="auth-layout">{children}</div>;
+  return (
+    <div className="auth-bg min-h-screen">
+      <div className="auth-layout">{children}</div>
+    </div>
+  );
 };
 
 export default AuthLayout;

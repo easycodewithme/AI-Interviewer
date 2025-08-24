@@ -12,6 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 
 import { Form } from "@/components/ui/form";
@@ -95,22 +97,60 @@ const AuthForm = ({ type }: { type: FormType }) => {
     }
   };
 
+  const onGoogleSignIn = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+
+      const idToken = await result.user.getIdToken();
+      const email = result.user.email;
+
+      if (!idToken || !email) {
+        toast.error("Google sign-in failed");
+        return;
+      }
+
+      const res = await signIn({ email, idToken });
+      if (res?.success === false) {
+        toast.error(res.message || "Server sign-in failed");
+        return;
+      }
+
+      toast.success("Signed in with Google");
+      router.push("/");
+    } catch (error) {
+      console.log(error);
+      toast.error("Google sign-in error");
+    }
+  };
+
   const isSignIn = type === "sign-in";
 
   return (
-    <div className="card-border lg:min-w-[566px]">
-      <div className="flex flex-col gap-6 card py-14 px-10">
-        <div className="flex flex-row gap-2 justify-center">
+    <div className="auth-card w-full max-w-[580px] mx-auto">
+      <div className="flex flex-col gap-6 py-10 px-8 sm:py-12 sm:px-10">
+        <div className="flex items-center gap-2 justify-center">
           <Image src="/logo.svg" alt="logo" height={32} width={38} />
           <h2 className="text-primary-100">PrepWise</h2>
         </div>
 
-        <h3>Practice job interviews with AI</h3>
+        <div className="flex justify-center">
+          <nav className="segmented" role="tablist" aria-label="Auth tabs">
+            <Link href="/sign-in" data-active={isSignIn ? "true" : undefined}>
+              Sign In
+            </Link>
+            <Link href="/sign-up" data-active={!isSignIn ? "true" : undefined}>
+              Sign Up
+            </Link>
+          </nav>
+        </div>
+
+        <h3 className="text-center">Practice job interviews with AI</h3>
 
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="w-full space-y-6 mt-4 form"
+            className="w-full space-y-6 mt-2 form"
           >
             {!isSignIn && (
               <FormField
@@ -138,11 +178,22 @@ const AuthForm = ({ type }: { type: FormType }) => {
               type="password"
             />
 
-            <Button className="btn" type="submit">
+            <Button className="btn w-full" type="submit">
               {isSignIn ? "Sign In" : "Create an Account"}
             </Button>
           </form>
         </Form>
+
+        <div className="flex items-center gap-2">
+          <div className="h-px bg-dark-200 flex-1" />
+          <span className="text-xs text-dark-400">or</span>
+          <div className="h-px bg-dark-200 flex-1" />
+        </div>
+
+        <Button type="button" className="btn w-full" onClick={onGoogleSignIn}>
+          <Image src="/google.svg" alt="google" width={18} height={18} className="mr-2" />
+          Continue with Google
+        </Button>
 
         <p className="text-center">
           {isSignIn ? "No account yet?" : "Have an account already?"}

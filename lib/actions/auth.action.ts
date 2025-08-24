@@ -78,7 +78,22 @@ export async function signIn(params: SignInParams) {
         message: "User does not exist. Create an account.",
       };
 
+    // Ensure a Firestore user document exists (handles Google sign-in as well)
+    const existingDoc = await db.collection("users").doc(userRecord.uid).get();
+    if (!existingDoc.exists) {
+      await db
+        .collection("users")
+        .doc(userRecord.uid)
+        .set({
+          name: userRecord.displayName || "",
+          email: userRecord.email || email,
+          profileURL: userRecord.photoURL || "",
+        });
+    }
+
     await setSessionCookie(idToken);
+
+    return { success: true };
   } catch (error: any) {
     console.log("");
 
@@ -129,4 +144,27 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function isAuthenticated() {
   const user = await getCurrentUser();
   return !!user;
+}
+
+// Update current user's profile (name, profileURL)
+export async function updateUserProfile(data: { name?: string; profileURL?: string }) {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("session")?.value;
+  if (!sessionCookie)
+    return { success: false, message: "Not authenticated" } as const;
+
+  try {
+    const decoded = await auth.verifySessionCookie(sessionCookie, true);
+    const payload: Record<string, any> = {};
+    if (typeof data.name === "string") payload.name = data.name;
+    if (typeof data.profileURL === "string") payload.profileURL = data.profileURL;
+    if (Object.keys(payload).length === 0)
+      return { success: false, message: "No changes provided" } as const;
+
+    await db.collection("users").doc(decoded.uid).set(payload, { merge: true });
+    return { success: true } as const;
+  } catch (error) {
+    console.error("updateUserProfile error", error);
+    return { success: false, message: "Failed to update profile" } as const;
+  }
 }

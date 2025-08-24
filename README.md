@@ -7,12 +7,13 @@
   
   <div>
     <img src="https://img.shields.io/badge/-Next.JS-black?style=for-the-badge&logoColor=white&logo=nextdotjs&color=black" alt="next.js" />
-    <img src="https://img.shields.io/badge/-Vapi-white?style=for-the-badge&color=5dfeca" alt="vapi" />
+    <img src="https://img.shields.io/badge/-Deepgram-black?style=for-the-badge&logo=deepgram&logoColor=white&color=2A2A2A" alt="deepgram" />
+    <img src="https://img.shields.io/badge/-Google_Gemini-black?style=for-the-badge&logo=google&logoColor=white&color=4285F4" alt="google gemini" />
     <img src="https://img.shields.io/badge/-Tailwind_CSS-black?style=for-the-badge&logoColor=white&logo=tailwindcss&color=06B6D4" alt="tailwindcss" />
     <img src="https://img.shields.io/badge/-Firebase-black?style=for-the-badge&logoColor=white&logo=firebase&color=DD2C00" alt="firebase" />
   </div>
 
-  <h3 align="center">Prepwise: A job interview preparation platform powered by Vapi AI Voice agents</h3>
+  <h3 align="center">Prepwise: A job interview preparation platform powered by Deepgram (STT/TTS) and Google Gemini</h3>
 
    <div align="center">
      Build this project step by step with our detailed tutorial on <a href="https://www.youtube.com/@javascriptmastery/videos" target="_blank"><b>JavaScript Mastery</b></a> YouTube. Join the JSM family!
@@ -39,7 +40,7 @@ If you prefer visual learning, this is the perfect resource for you. Follow our 
 
 ## <a name="introduction">🤖 Introduction</a>
 
-Built with Next.js for the user interface and backend logic, Firebase for authentication and data storage, styled with TailwindCSS and using Vapi's voice agents, Prepwise is a website project designed to help you learn integrating AI models with your apps. The platform offers a sleek and modern experience for job interview preparation.
+Built with Next.js for the user interface and backend logic, Firebase for authentication and data storage, styled with TailwindCSS, using Deepgram for speech-to-text and text-to-speech, and Google Gemini for LLM generation, Prepwise is a website project designed to help you learn integrating AI models with your apps. The platform offers a sleek and modern experience for job interview preparation.
 
 If you're getting started and need assistance or face any bugs, join our active Discord community with over **50k+** members. It's a place where people help each other out.
 
@@ -50,18 +51,18 @@ If you're getting started and need assistance or face any bugs, join our active 
 - Next.js
 - Firebase
 - Tailwind CSS
-- Vapi AI
+- Deepgram (STT & TTS)
 - shadcn/ui
-- Google Gemeni
+- Google Gemini
 - Zod
 
 ## <a name="features">🔋 Features</a>
 
 👉 **Authentication**: Sign Up and Sign In using password/email authentication handled by Firebase.
 
-👉 **Create Interviews**: Easily generate job interviews with help of Vapi voice assistants and Google Gemini.
+👉 **Create Interviews**: Easily generate job interviews using Google Gemini based on your role, level, and tech stack.
 
-👉 **Get feedback from AI**: Take the interview with AI voice agent, and receive instant feedback based on your conversation.
+👉 **Get feedback from AI**: Take the interview with built-in voice interaction (Deepgram STT/TTS), and receive instant feedback based on your conversation.
 
 👉 **Modern UI/UX**: A sleek and user-friendly interface designed for a great experience.
 
@@ -105,13 +106,14 @@ npm install
 Create a new file named `.env.local` in the root of your project and add the following content:
 
 ```env
-NEXT_PUBLIC_VAPI_WEB_TOKEN=
-NEXT_PUBLIC_VAPI_WORKFLOW_ID=
-
+# Deepgram & Gemini
+DEEPGRAM_API_KEY=
 GOOGLE_GENERATIVE_AI_API_KEY=
 
+# (Optional) Base URL if you use absolute fetches
 NEXT_PUBLIC_BASE_URL=
 
+# Firebase client config
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=
@@ -119,12 +121,13 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 
+# Firebase Admin SDK (server)
 FIREBASE_PROJECT_ID=
 FIREBASE_CLIENT_EMAIL=
 FIREBASE_PRIVATE_KEY=
 ```
 
-Replace the placeholder values with your actual **[Firebase](https://firebase.google.com/)**, **[Vapi](https://vapi.ai/?utm_source=youtube&utm_medium=video&utm_campaign=jsmastery_recruitingpractice&utm_content=paid_partner&utm_term=recruitingpractice)** credentials.
+Replace the placeholder values with your actual **[Firebase](https://firebase.google.com/)**, **[Deepgram](https://developers.deepgram.com/)** and **[Google Generative AI](https://ai.google.dev/)** credentials.
 
 **Running the Project**
 
@@ -527,7 +530,7 @@ export const getTechLogos = async (techArray: string[]) => {
 
 export const getRandomInterviewCover = () => {
   const randomIndex = Math.floor(Math.random() * interviewCovers.length);
-  return `/covers${interviewCovers[randomIndex]}`;
+  return interviewCovers[randomIndex];
 };
 
 ```
@@ -535,7 +538,7 @@ export const getRandomInterviewCover = () => {
 </details>
 
 <details>
-<summary><code>Generate questions prompt (/app/api/vapi/generate/route.tsx):</code></summary>
+<summary><code>Generate questions prompt (/app/api/generate-interview/route.ts):</code></summary>
 
 ```javascript
 `Prepare questions for a job interview.

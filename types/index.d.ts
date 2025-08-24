@@ -35,6 +35,7 @@ interface CreateFeedbackParams {
 interface User {
   name: string;
   email: string;
+  profileURL?: string;
   id: string;
 }
 

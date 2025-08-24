@@ -36,11 +36,12 @@ async function Home() {
         </div>
 
         <Image
-          src="/robot.png"
-          alt="robo-dude"
-          width={400}
-          height={400}
-          className="max-sm:hidden"
+          src="/user-avatar.png"
+          alt="hero-illustration"
+          width={420}
+          height={420}
+          className="max-sm:hidden rounded-2xl shadow-2xl"
+          priority
         />
       </section>
 
