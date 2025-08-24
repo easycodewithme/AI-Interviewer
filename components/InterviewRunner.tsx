@@ -95,10 +95,14 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
     const mr = mediaRecorderRef.current;
     if (!mr) return;
     await new Promise<void>((resolve) => {
-      mr.onstop = () => { resolve(); };
+      const handler = () => { mr.removeEventListener("stop", handler); resolve(); };
+      mr.addEventListener("stop", handler);
       mr.stop();
     });
     setRecording(false);
+    // Ensure tracks are stopped to release mic
+    const stream: MediaStream | undefined = (mr as any).stream;
+    stream?.getTracks().forEach((t) => t.stop());
 
     const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
     const res = await fetch("/api/speech-to-text", {
@@ -118,6 +122,44 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
 
     // Decide next step based on the user's answer (conversational flow)
     await decideNextStep(transcript, allMessages);
+  };
+
+  // End the interview immediately; if recording, stop & transcribe current answer first
+  const endInterviewNow = async () => {
+    try {
+      const mr = mediaRecorderRef.current;
+      if (recording && mr) {
+        await new Promise<void>((resolve) => {
+          const handler = () => { mr.removeEventListener("stop", handler); resolve(); };
+          mr.addEventListener("stop", handler);
+          mr.stop();
+        });
+        setRecording(false);
+        const stream: MediaStream | undefined = (mr as any).stream;
+        stream?.getTracks().forEach((t) => t.stop());
+
+        // Transcribe the just-recorded audio and include it in transcript
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const res = await fetch("/api/speech-to-text", {
+          method: "POST",
+          headers: { "Content-Type": "audio/webm" },
+          body: blob,
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const transcript: string = data.transcript || "";
+          await finalizeInterview([...messages, { role: "user", content: transcript }]);
+          return;
+        }
+        // If STT fails, still finalize with prior messages
+        await finalizeInterview(messages);
+        return;
+      }
+      // Not recording: finalize immediately
+      await finalizeInterview(messages);
+    } catch (e: any) {
+      await finalizeInterview(messages);
+    }
   };
 
   const askCurrentQuestion = async () => {
@@ -248,6 +290,9 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
               Stop Answer
             </button>
           )}
+          <button className="btn-secondary" onClick={endInterviewNow}>
+            End Interview
+          </button>
         </div>
       </div>
     </>
