@@ -43,7 +43,7 @@ export default async function SettingsPage() {
           </p>
           <div className="mt-3">
             <Button asChild variant="outline">
-              <Link href="/sign-out">Sign out</Link>
+              <Link href="/sign-out" prefetch>Sign out</Link>
             </Button>
           </div>
         </div>

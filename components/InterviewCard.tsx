@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import Link from "next/link";
+import PrefetchLink from "@/components/PrefetchLink";
 import Image from "next/image";
 
 import { Button } from "./ui/button";
@@ -92,7 +92,7 @@ const InterviewCard = async ({
           <DisplayTechIcons techStack={techstack} />
 
           <Button className="btn-primary">
-            <Link
+            <PrefetchLink
               href={
                 feedback
                   ? `/interview/${interviewId}/feedback`
@@ -100,7 +100,7 @@ const InterviewCard = async ({
               }
             >
               {feedback ? "Check Feedback" : "View Interview"}
-            </Link>
+            </PrefetchLink>
           </Button>
         </div>
       </div>

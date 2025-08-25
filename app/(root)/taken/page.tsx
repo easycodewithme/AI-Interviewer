@@ -13,7 +13,7 @@ const TakenInterviewsPage = async () => {
       <div className="flex flex-col items-center gap-4">
         <p>Please sign in to view your taken interviews.</p>
         <Button asChild className="btn-primary">
-          <Link href="/">Go to Dashboard</Link>
+          <Link href="/" prefetch>Go to Dashboard</Link>
         </Button>
       </div>
     );
@@ -27,7 +27,7 @@ const TakenInterviewsPage = async () => {
       <div className="flex items-center justify-between gap-3">
         <h2>Taken Interviews</h2>
         <Button asChild className="btn-primary">
-          <Link href="/interview">Start New Interview</Link>
+          <Link href="/interview" prefetch>Start New Interview</Link>
         </Button>
       </div>
 

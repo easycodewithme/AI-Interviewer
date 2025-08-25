@@ -29,6 +29,13 @@ export default function InterviewRunner({ userName, userId, interviewId, questio
   // Prevent duplicate speaks in React Strict Mode and track asked base questions
   const askedSetRef = useRef<Set<number>>(new Set());
 
+  // Prefetch feedback route early to make final redirect instant
+  useEffect(() => {
+    if (interviewId) {
+      router.prefetch(`/interview/${interviewId}/feedback`);
+    }
+  }, [interviewId, router]);
+
   useEffect(() => {
     // Pre-ask permission to avoid UX hiccups
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {

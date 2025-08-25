@@ -1,13 +1,14 @@
 "use client";
 
 import { z } from "zod";
-import Link from "next/link";
+import PrefetchLink from "@/components/PrefetchLink";
 import Image from "next/image";
 import { toast } from "sonner";
 import { auth } from "@/firebase/client";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 
 import {
   createUserWithEmailAndPassword,
@@ -32,6 +33,12 @@ const authFormSchema = (type: FormType) => {
 
 const AuthForm = ({ type }: { type: FormType }) => {
   const router = useRouter();
+  // Prefetch common auth routes to speed up tab switching and redirects
+  useEffect(() => {
+    ["/", "/sign-in", "/sign-up"].forEach((r) => {
+      try { router.prefetch(r); } catch {}
+    });
+  }, [router]);
 
   const formSchema = authFormSchema(type);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -67,6 +74,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
         }
 
         toast.success("Account created successfully. Please sign in.");
+        router.prefetch("/sign-in");
         router.push("/sign-in");
       } else {
         const { email, password } = data;
@@ -89,6 +97,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
         });
 
         toast.success("Signed in successfully.");
+        router.prefetch("/");
         router.push("/");
       }
     } catch (error) {
@@ -117,6 +126,8 @@ const AuthForm = ({ type }: { type: FormType }) => {
       }
 
       toast.success("Signed in with Google");
+      // Warm dashboard for instant avatar/profile update
+      try { router.prefetch("/"); } catch {}
       router.push("/");
     } catch (error) {
       console.log(error);
@@ -136,12 +147,12 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
         <div className="flex justify-center">
           <nav className="segmented" role="tablist" aria-label="Auth tabs">
-            <Link href="/sign-in" data-active={isSignIn ? "true" : undefined}>
+            <PrefetchLink href="/sign-in" data-active={isSignIn ? "true" : undefined}>
               Sign In
-            </Link>
-            <Link href="/sign-up" data-active={!isSignIn ? "true" : undefined}>
+            </PrefetchLink>
+            <PrefetchLink href="/sign-up" data-active={!isSignIn ? "true" : undefined}>
               Sign Up
-            </Link>
+            </PrefetchLink>
           </nav>
         </div>
 
@@ -205,12 +216,12 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
         <p className="text-center">
           {isSignIn ? "No account yet?" : "Have an account already?"}
-          <Link
+          <PrefetchLink
             href={!isSignIn ? "/sign-in" : "/sign-up"}
             className="font-bold text-user-primary ml-1"
           >
             {!isSignIn ? "Sign In" : "Sign Up"}
-          </Link>
+          </PrefetchLink>
         </p>
       </div>
     </div>

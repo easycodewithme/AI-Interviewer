@@ -12,9 +12,11 @@ import { getCurrentUser } from "@/lib/actions/auth.action";
 
 const Feedback = async ({ params }: RouteParams) => {
   const { id } = await params;
-  const user = await getCurrentUser();
-
-  const interview = await getInterviewById(id);
+  // Fetch user and interview in parallel to reduce latency
+  const [user, interview] = await Promise.all([
+    getCurrentUser(),
+    getInterviewById(id),
+  ]);
   if (!interview) redirect("/");
 
   const feedback = await getFeedbackByInterviewId({
@@ -137,12 +139,12 @@ const Feedback = async ({ params }: RouteParams) => {
       {/* Actions */}
       <div className="buttons">
         <Button className="btn-secondary flex-1">
-          <Link href="/" className="flex w-full justify-center">
+          <Link href="/" prefetch className="flex w-full justify-center">
             <p className="text-sm font-semibold text-primary-200 text-center">Back to dashboard</p>
           </Link>
         </Button>
         <Button className="btn-primary flex-1">
-          <Link href={`/interview/${id}`} className="flex w-full justify-center">
+          <Link href={`/interview/${id}`} prefetch className="flex w-full justify-center">
             <p className="text-sm font-semibold text-black text-center">Retake Interview</p>
           </Link>
         </Button>

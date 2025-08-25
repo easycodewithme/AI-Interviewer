@@ -42,6 +42,7 @@ export default function InterviewForm({ userId }: { userId: string }) {
       if (!res.ok || !data.success) throw new Error(data.error || "Failed");
 
       toast.success("Interview generated");
+      try { router.prefetch(`/interview/${data.id}`); } catch {}
       router.push(`/interview/${data.id}`);
     } catch (e: any) {
       toast.error(e?.message || "Failed to generate interview");

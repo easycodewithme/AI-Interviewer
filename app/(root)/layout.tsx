@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNav from "@/components/MobileNav";
 import { isAuthenticated, getCurrentUser } from "@/lib/actions/auth.action";
+import RoutePrefetcher from "@/components/RoutePrefetcher";
 
 const Layout = async ({ children }: { children: ReactNode }) => {
   const isUserAuthenticated = await isAuthenticated();
@@ -12,6 +13,8 @@ const Layout = async ({ children }: { children: ReactNode }) => {
 
   return (
     <div className="dashboard-bg min-h-screen">
+      {/* Prefetch common routes to speed up navigation */}
+      <RoutePrefetcher routes={["/", "/interview", "/taken", "/settings", "/sign-out"]} />
       {/* Fixed Sidebar on desktop */}
       <div className="hidden md:block fixed left-0 top-0 h-screen w-[260px] z-30">
         <Sidebar user={user as any} />

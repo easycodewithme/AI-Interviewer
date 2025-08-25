@@ -78,17 +78,33 @@ export async function signIn(params: SignInParams) {
         message: "User does not exist. Create an account.",
       };
 
-    // Ensure a Firestore user document exists (handles Google sign-in as well)
-    const existingDoc = await db.collection("users").doc(userRecord.uid).get();
+    // Decode token to detect provider (google.com, password, etc.)
+    let signInProvider: string | undefined;
+    try {
+      const decoded = await auth.verifyIdToken(idToken);
+      // e.g., decoded.firebase.sign_in_provider === 'google.com'
+      signInProvider = (decoded as any)?.firebase?.sign_in_provider;
+    } catch {}
+
+    // Ensure a Firestore user document exists and sync Google avatar if applicable
+    const userRef = db.collection("users").doc(userRecord.uid);
+    const existingDoc = await userRef.get();
+
     if (!existingDoc.exists) {
-      await db
-        .collection("users")
-        .doc(userRecord.uid)
-        .set({
-          name: userRecord.displayName || "",
-          email: userRecord.email || email,
-          profileURL: userRecord.photoURL || "",
-        });
+      await userRef.set({
+        name: userRecord.displayName || "",
+        email: userRecord.email || email,
+        profileURL: userRecord.photoURL || "",
+      });
+    } else if (signInProvider === "google.com") {
+      // Keep the profile photo in sync with Google on Google sign-in
+      const payload: Record<string, any> = {};
+      if (userRecord.displayName) payload.name = userRecord.displayName;
+      if (userRecord.email) payload.email = userRecord.email;
+      if (userRecord.photoURL) payload.profileURL = userRecord.photoURL;
+      if (Object.keys(payload).length) {
+        await userRef.set(payload, { merge: true });
+      }
     }
 
     await setSessionCookie(idToken);

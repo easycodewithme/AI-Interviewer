@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import PrefetchLink from "@/components/PrefetchLink";
 import Image from "next/image";
 import { Menu, Home, ListChecks, Settings, LogOut, History } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -24,36 +24,36 @@ export default function MobileNav({ user }: MobileNavProps) {
         <SheetContent side="left" className="bg-transparent border-none p-0">
           <SheetTitle className="sr-only">Mobile navigation</SheetTitle>
           <aside className="glass-panel p-4 h-full flex flex-col gap-4 w-full">
-            <Link href="/" className="flex items-center gap-2 px-2">
+            <PrefetchLink href="/" className="flex items-center gap-2 px-2">
               <Image src="/logo.svg" alt="Hireiq.ai" width={32} height={28} />
               <h2 className="text-primary-100">Hireiq.ai</h2>
-            </Link>
+            </PrefetchLink>
 
             <nav className="mt-2 flex-1">
               <ul className="space-y-1 list-none m-0 p-0">
                 <li>
-                  <Link href="/" className="nav-link" data-active={pathname === "/"}>
+                  <PrefetchLink href="/" className="nav-link" data-active={pathname === "/"}>
                     <Home className="size-4" />
                     <span>Dashboard</span>
-                  </Link>
+                  </PrefetchLink>
                 </li>
                 <li>
-                  <Link href="/interview" className="nav-link" data-active={pathname?.startsWith("/interview")}>
+                  <PrefetchLink href="/interview" className="nav-link" data-active={pathname?.startsWith("/interview")}>
                     <ListChecks className="size-4" />
                     <span>Interviews</span>
-                  </Link>
+                  </PrefetchLink>
                 </li>
                 <li>
-                  <Link href="/taken" className="nav-link" data-active={pathname?.startsWith("/taken")}>
+                  <PrefetchLink href="/taken" className="nav-link" data-active={pathname?.startsWith("/taken")}>
                     <History className="size-4" />
                     <span>Taken Interviews</span>
-                  </Link>
+                  </PrefetchLink>
                 </li>
                 <li>
-                  <Link href="/settings" className="nav-link" data-active={pathname?.startsWith("/settings")}>
+                  <PrefetchLink href="/settings" className="nav-link" data-active={pathname?.startsWith("/settings")}>
                     <Settings className="size-4" />
                     <span>Settings</span>
-                  </Link>
+                  </PrefetchLink>
                 </li>
               </ul>
             </nav>
@@ -73,24 +73,24 @@ export default function MobileNav({ user }: MobileNavProps) {
                 </div>
               </div>
               <div className="flex gap-2 mt-3">
-                <Link href="/settings" className="nav-link flex-1 justify-center">
+                <PrefetchLink href="/settings" className="nav-link flex-1 justify-center">
                   <Settings className="size-4" />
                   <span>Settings</span>
-                </Link>
-                <Link href="/sign-out" className="nav-link flex-1 justify-center">
+                </PrefetchLink>
+                <PrefetchLink href="/sign-out" className="nav-link flex-1 justify-center">
                   <LogOut className="size-4" />
                   <span>Sign out</span>
-                </Link>
+                </PrefetchLink>
               </div>
             </div>
           </aside>
         </SheetContent>
       </Sheet>
 
-      <Link href="/" className="flex items-center gap-2">
+      <PrefetchLink href="/" className="flex items-center gap-2">
         <Image src="/logo.svg" alt="Hireiq.ai" width={32} height={28} />
         <span className="text-primary-100 font-semibold">Hireiq.ai</span>
-      </Link>
+      </PrefetchLink>
 
       <div className="size-9" />
     </div>

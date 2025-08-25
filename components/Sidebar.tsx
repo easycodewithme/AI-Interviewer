@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import PrefetchLink from "@/components/PrefetchLink";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, ListChecks, Settings, LogOut, ChevronsLeft, ChevronsRight, History } from "lucide-react";
@@ -24,10 +24,10 @@ export default function Sidebar({ user }: SidebarProps) {
   return (
     <aside className={`glass-panel h-screen p-4 flex flex-col gap-4 transition-[width] duration-300 ${collapsed ? "w-20" : "w-64"}`}>
       <div className="flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 px-2">
+        <PrefetchLink href="/" className="flex items-center gap-2 px-2">
           <Image src="/logo.svg" alt="Hireiq.ai" width={32} height={28} />
           {!collapsed && <h2 className="text-primary-100">Hireiq.ai</h2>}
-        </Link>
+        </PrefetchLink>
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
@@ -44,10 +44,10 @@ export default function Sidebar({ user }: SidebarProps) {
             const active = pathname === href || (href !== "/" && pathname?.startsWith(href));
             return (
               <li key={href}>
-                <Link href={href} className="nav-link" data-active={active}>
+                <PrefetchLink href={href} className="nav-link" data-active={active}>
                   <Icon className="size-4 shrink-0" />
                   {!collapsed && <span className="truncate">{label}</span>}
-                </Link>
+                </PrefetchLink>
               </li>
             );
           })}
@@ -72,14 +72,14 @@ export default function Sidebar({ user }: SidebarProps) {
         </div>
 
         <div className="flex gap-2 mt-3">
-          <Link href="/settings" className="nav-link flex-1 justify-center" data-active={pathname?.startsWith("/settings")}>
+          <PrefetchLink href="/settings" className="nav-link flex-1 justify-center" data-active={pathname?.startsWith("/settings")}>
             <Settings className="size-4" />
             {!collapsed && <span>Settings</span>}
-          </Link>
-          <Link href="/sign-out" className="nav-link flex-1 justify-center">
+          </PrefetchLink>
+          <PrefetchLink href="/sign-out" className="nav-link flex-1 justify-center">
             <LogOut className="size-4" />
             {!collapsed && <span>Sign out</span>}
-          </Link>
+          </PrefetchLink>
         </div>
       </div>
     </aside>

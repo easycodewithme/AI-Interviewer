@@ -10,10 +10,11 @@ import DisplayTechIcons from "@/components/DisplayTechIcons";
 
 const InterviewDetails = async ({ params }: RouteParams) => {
   const { id } = await params;
-
-  const user = await getCurrentUser();
-
-  const interview = await getInterviewById(id);
+  // Fetch user and interview in parallel to reduce latency
+  const [user, interview] = await Promise.all([
+    getCurrentUser(),
+    getInterviewById(id),
+  ]);
   if (!interview) redirect("/");
 
   // Feedback is created at the end of the interview by InterviewRunner
